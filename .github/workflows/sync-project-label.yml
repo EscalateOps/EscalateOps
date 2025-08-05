@@ -1,0 +1,52 @@
+name: Sync project column to label
+
+on:
+  project_card:
+    types: [moved]
+
+jobs:
+  update-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync label with column
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const card = context.payload.project_card;
+            const column_id = card.column_id;
+
+            const column = await github.rest.projects.getColumn({
+              column_id: column_id
+            });
+
+            const columnName = column.data.name.toLowerCase().replace(/\s+/g, '-'); // ej: In Progress → in-progress
+
+            const issueUrl = card.content_url;
+            const parts = issueUrl.split('/');
+            const issue_number = parts[parts.length - 1];
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const currentLabels = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number
+            });
+
+            const newLabel = `estado:${columnName}`;
+            const filteredLabels = currentLabels.data
+              .map(label => label.name)
+              .filter(name => !name.startsWith("estado:"));
+
+            filteredLabels.push(newLabel);
+
+            await github.rest.issues.setLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: filteredLabels
+            });
+
+            console.log(`✅ Etiqueta sincronizada: ${newLabel}`);
