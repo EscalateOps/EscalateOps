@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Add issue to project
-        uses: actions/add-to-project@v1
+        uses: peter-evans/add-to-project@v0.5.0
         with:
           project-url: https://github.com/users/EscalateOps/projects/1/views/1
           github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
